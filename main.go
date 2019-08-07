@@ -4,6 +4,7 @@ package main
 // @APITitle Brand Foods Product Database
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/graphql-go/graphql"
 	"github.com/littlebunch/fdc-api/ds"
+	"github.com/littlebunch/fdc-api/ds/cb"
 	fdc "github.com/littlebunch/fdc-api/model"
 )
 
@@ -52,17 +54,17 @@ func init() {
 
 func main() {
 
-	//var cb cb.Cb
+	var cb cb.Cb
 	flag.Parse()
 	// get configuration
-	/*cs.GetConfig(c)
+	cs.GetConfig(c)
 	// Create a datastore and connect to it
 	dc = &cb
 	err = dc.ConnectDs(cs)
 	if err != nil {
 		log.Fatal("Cannot get datastore connection %v.", err)
 	}
-	defer dc.CloseDs()*/
+	defer dc.CloseDs()
 	// initialize our jwt authentication
 	//var u *auth.User
 	//if *i {
@@ -103,17 +105,41 @@ func main() {
 			"foods": &graphql.Field{
 				Type: graphql.NewList(foodType),
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					/*query := gocb.NewN1qlQuery("SELECT META(account).id, account.* FROM example AS account WHERE account.type = 'account'")
-					rows, err := bucket.ExecuteN1qlQuery(query, nil)
+					var rows []interface{}
+					err := dc.Browse(cs.CouchDb.Bucket, "type=\"FOOD\" ", 0, 50, "fdcId", "asc", &rows)
 					if err != nil {
 						return nil, err
 					}
-					var accounts []Account
-					var row Account
-					for rows.Next(&row) {
-						accounts = append(accounts, row)
-					}*/
-					return nil, nil
+					var foods []fdc.Food
+					var food fdc.Food
+
+					for _, row := range rows {
+						if err = json.Unmarshal([]byte(&row), food); err != nil {
+							fmt.Printf("ERROR on Unmarshal %v", err)
+						} else {
+							foods = append(foods, food)
+						}
+
+					}
+					return rows, nil
+				},
+			},
+			"food": &graphql.Field{
+				Type: foodType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+				},
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					var food fdc.Food
+					food.FdcID = p.Args["id"].(string)
+					fmt.Printf("id=%s\n", food.FdcID)
+					err := dc.Get(food.FdcID, &food)
+					if err != nil {
+						return nil, err
+					}
+					return food, nil
 				},
 			},
 		},
@@ -128,8 +154,17 @@ func main() {
 	v1 := router.Group(fmt.Sprintf("%s", *r))
 	{
 		//v1.POST("/login", authMiddleware.LoginHandler)
-		v1.GET("/", gin.WrapH(handler.Playground("GraphQL playground", "/api")))
-		v1.GET("/graphql", func(c *gin.Context) {
+		v1.GET("/", gin.WrapH(handler.Playground("GraphQL playground", "/graphql")))
+		v1.GET("", func(c *gin.Context) {
+			fmt.Printf("QUERY=%s\n", c.Query("query"))
+			result := graphql.Do(graphql.Params{
+				Schema:        schema,
+				RequestString: c.Query("query"),
+			})
+			c.JSON(http.StatusOK, result)
+		})
+		v1.POST("", func(c *gin.Context) {
+			fmt.Printf("QUERY=%s\n", c.Param("query"))
 			result := graphql.Do(graphql.Params{
 				Schema:        schema,
 				RequestString: c.Param("query"),
