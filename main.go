@@ -4,7 +4,6 @@ package main
 // @APITitle Brand Foods Product Database
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -110,7 +109,7 @@ func main() {
 					if err != nil {
 						return nil, err
 					}
-					var foods []fdc.Food
+					/*var foods []fdc.Food
 					var food fdc.Food
 
 					for _, row := range rows {
@@ -120,7 +119,7 @@ func main() {
 							foods = append(foods, food)
 						}
 
-					}
+					}*/
 					return rows, nil
 				},
 			},
@@ -154,9 +153,9 @@ func main() {
 	v1 := router.Group(fmt.Sprintf("%s", *r))
 	{
 		//v1.POST("/login", authMiddleware.LoginHandler)
-		v1.GET("/", gin.WrapH(handler.Playground("GraphQL playground", "/graphql")))
+		v1.GET("/", gin.WrapH(handler.Playground("GraphQL playground", "")))
 		v1.GET("", func(c *gin.Context) {
-			fmt.Printf("QUERY=%s\n", c.Query("query"))
+			fmt.Printf("Query=%s\n", c.Query("query"))
 			result := graphql.Do(graphql.Params{
 				Schema:        schema,
 				RequestString: c.Query("query"),
@@ -164,7 +163,6 @@ func main() {
 			c.JSON(http.StatusOK, result)
 		})
 		v1.POST("", func(c *gin.Context) {
-			fmt.Printf("QUERY=%s\n", c.Param("query"))
 			result := graphql.Do(graphql.Params{
 				Schema:        schema,
 				RequestString: c.Param("query"),
