@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"os"
 
+	gocb "gopkg.in/couchbase/gocb.v1"
+
 	"github.com/99designs/gqlgen/handler"
 	"github.com/fvbock/endless"
 	"github.com/gin-gonic/gin"
@@ -104,23 +106,18 @@ func main() {
 			"foods": &graphql.Field{
 				Type: graphql.NewList(foodType),
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					var rows []interface{}
-					err := dc.Browse(cs.CouchDb.Bucket, "type=\"FOOD\" ", 0, 50, "fdcId", "asc", &rows)
+					query := gocb.NewN1qlQuery("select food.* from gnutdata as food where type=\"FOOD\" AND dataSource=\"LI\" LIMIT 50")
+					rows, err := cb.Conn.ExecuteN1qlQuery(query, nil)
 					if err != nil {
 						return nil, err
+
 					}
-					/*var foods []fdc.Food
-					var food fdc.Food
-
-					for _, row := range rows {
-						if err = json.Unmarshal([]byte(&row), food); err != nil {
-							fmt.Printf("ERROR on Unmarshal %v", err)
-						} else {
-							foods = append(foods, food)
-						}
-
-					}*/
-					return rows, nil
+					var foods []fdc.Food
+					var row fdc.Food
+					for rows.Next(&row) {
+						foods = append(foods, row)
+					}
+					return foods, nil
 				},
 			},
 			"food": &graphql.Field{
@@ -133,7 +130,6 @@ func main() {
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					var food fdc.Food
 					food.FdcID = p.Args["id"].(string)
-					fmt.Printf("id=%s\n", food.FdcID)
 					err := dc.Get(food.FdcID, &food)
 					if err != nil {
 						return nil, err
@@ -163,9 +159,22 @@ func main() {
 			c.JSON(http.StatusOK, result)
 		})
 		v1.POST("", func(c *gin.Context) {
+			type Q struct {
+				Query string `json:"query"`
+			}
+			var q Q
+			err := c.BindJSON(&q)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error":  "json decoding : " + err.Error(),
+					"status": http.StatusBadRequest,
+				})
+				return
+			}
+
 			result := graphql.Do(graphql.Params{
 				Schema:        schema,
-				RequestString: c.Param("query"),
+				RequestString: q.Query,
 			})
 			c.JSON(http.StatusOK, result)
 		})
