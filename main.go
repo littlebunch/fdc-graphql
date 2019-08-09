@@ -73,7 +73,36 @@ func main() {
 	//}
 	//authMiddleware := u.AuthMiddleware(session, cs.MongoDb.Collection)
 	//router := gin.Default()
+	/*Nutrientbasis string  `json:"100UnitNutrientBasis,omitempty"`
+	Description   string  `json:"householdServingUom"`
+	Servingstate  string  `json:"servingState,omitempty"`
+	Weight        float32 `json:"weightInGmOrMl"`
+	Servingamount float32 `json:"householdServingValue,omitempty"`
+	Datapoints    int32   `json:"datapoints,omitempty"`*/
 
+	servingType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "Serving",
+		Fields: graphql.Fields{
+			"Nutrientbasis": &graphql.Field{
+				Type: graphql.String,
+			},
+			"Description": &graphql.Field{
+				Type: graphql.String,
+			},
+			"Servingstate": &graphql.Field{
+				Type: graphql.String,
+			},
+			"Weight": &graphql.Field{
+				Type: graphql.Float,
+			},
+			"Servingamount": &graphql.Field{
+				Type: graphql.Float,
+			},
+			"Datapoints": &graphql.Field{
+				Type: graphql.Int,
+			},
+		},
+	})
 	foodType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Food",
 		Fields: graphql.Fields{
@@ -97,6 +126,9 @@ func main() {
 			},
 			"type": &graphql.Field{
 				Type: graphql.String,
+			},
+			"servings": &graphql.Field{
+				Type: graphql.NewList(servingType),
 			},
 		},
 	})
