@@ -37,7 +37,7 @@ A playground is available at http://localhost:8000/graphql/.  Some queries to ru
 
 Query for an food by FDC id:
 ```
-curl -g '{food(id:\"356427\"){fdcId,description,company,ingredients,servings{Description,Nutrientbasis,Servingamount}}}'
+curl -g '{food(id:"356427"){fdcId,description,company,ingredients,servings{Description,Nutrientbasis,Servingamount}}}'
 ```
 A list of foods:
 ```
@@ -45,7 +45,7 @@ curl -g 'http://localhost:8000/graphql?query={foods{fdcId,description,company,in
 ```
 Nutrient data for a food:
 ```
-curl -g 'http://localhost:8000/graphql?query={food(id:\"356425\"){fdcId,description,dataSource,servings{Nutrientbasis,Description,Servingamount}} nutrientdata(fdcid:\"356425\",nutid:0){Nutrient,Nutrientno,Value}}'
+curl -g 'http://localhost:8000/graphql?query={food(id:"356425"){fdcId,description,dataSource,servings{Nutrientbasis,Description,Servingamount}}nutrientdata(fdcid:"356425",nutid:0){Nutrient,Nutrientno,Value}}'
 ```
 Data for an individual nutrient for a food:
 ```
