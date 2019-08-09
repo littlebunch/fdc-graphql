@@ -34,7 +34,7 @@ var (
 	c   = flag.String("c", "config.yml", "YAML Config file")
 	l   = flag.String("l", "/tmp/bfpd.out", "send log output to this file -- defaults to /tmp/bfpd.out")
 	p   = flag.String("p", "8000", "TCP port to used")
-	r   = flag.String("r", "v1", "root path to deploy -- defaults to 'v1'")
+	r   = flag.String("r", "graphql", "root path to deploy -- defaults to 'v1'")
 	cs  fdc.Config
 	err error
 	dc  ds.DataSource
