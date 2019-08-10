@@ -32,6 +32,11 @@ COUCHBASE_PWD=user_password
 ```
 go run main.go -c config.yml -p 8000 -r graphql
 ```
+Or, run from docker.io (you will need docker installed):
+```
+docker run --rm -it -p 8000:8000 --env-file=./docker.env littlebunch/fdcgql
+```
+You will need to pass in the Couchbase configuration as environment variables described above. The easiest way to do this is in a file, e.g. 'docker.env', of which a sample is provided in the repo's docker path.      
 ### Usage
 A playground is available at http://localhost:8000/graphql/.  Some queries to run include:
 
