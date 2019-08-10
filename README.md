@@ -40,24 +40,116 @@ You will need to pass in the Couchbase configuration as environment variables de
 ### Usage
 A playground is available at http://localhost:8000/graphql/.  Some queries to run include:
 
-Query for an food by FDC id:
+Query for a food by FDC id:
+```
+{
+  food(id:"356427"){
+      fdcId 
+      description
+      company
+      ingredients
+      servings{
+        Description
+        Nutrientbasis
+        Servingamount
+     }
+   }
+}
+```
 ```
 curl -g 'http://localhost:8000/graphql?query={food(id:"356427"){fdcId,description,company,ingredients,servings{Description,Nutrientbasis,Servingamount}}}'
 ```
+```
+curl -XPOST -H "Content-type:application-json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356427\"){fdcId,description,company,ingredients,servings{Description,Nutrientbasis,Servingamount}}}"}'
+```
 A list of foods:
+```
+{
+   foods{
+        fdcId
+        description
+        company
+        ingredients
+        servings{
+           Nutrientbasis
+           Description
+           Servingamount
+         }
+    }
+}
+```
 ```
 curl -g 'http://localhost:8000/graphql?query={foods{fdcId,description,company,ingredients,servings{Nutrientbasis, Description,Servingamount}}}'
 ```
+```
+curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{foods{fdcId,description,company,ingredients,servings{Nutrientbasis, Description,Servingamount}}}"}'
+```
 Nutrient data for a food:
+```
+{
+   food(id:"356425"){
+        fdcId
+        description
+        dataSource
+        servings{
+            Nutrientbasis
+            Description
+            Servingamount
+         }
+    }
+    nutrientdata(fdcid:"356425",nutid:0){
+        Nutrient
+        Nutrientno
+        Value
+    }
+}
+```
 ```
 curl -g 'http://localhost:8000/graphql?query={food(id:"356425"){fdcId,description,dataSource,servings{Nutrientbasis,Description,Servingamount}}nutrientdata(fdcid:"356425",nutid:0){Nutrient,Nutrientno,Value}}'
 ```
-Data for an individual nutrient for a food:
+```
+curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356425\"){fdcId,description,dataSource,servings{Nutrientbasis,Description,Servingamount}}nutrientdata(fdcid:\"356425\",nutid:0){Nutrient,Nutrientno,Value}}"}'
+```
+Nutrient data for an individual nutrient in a food:
+```
+{
+   food(id:"356425"){
+        fdcId
+        description
+        dataSource
+        servings{
+            Nutrientbasis
+            Description
+            Servingamount
+        }
+    } 
+    nutrientdata(fdcid:\"356425\",nutid:203){
+        Nutrient
+        Nutrientno
+        Value
+    }
+}
+```
 ```
 curl -g 'http://localhost:8000/graphql?query={food(id:"356425"){fdcId,description,dataSource,servings{Nutrientbasis,Description,Servingamount}} nutrientdata(fdcid:\"356425\",nutid:203){Nutrient,Nutrientno,Value}}'
 ```
+```
+curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356425\"){fdcId,description,dataSource,servings{Nutrientbasis,Description,Servingamount}} nutrientdata(fdcid:\"356425\",nutid:203){Nutrient,Nutrientno,Value}}"}'
+```
 Get a list nutrients from the database:
 ```
+{
+  nutrients{
+     Nutrientno
+     Name
+     Unit
+   }
+}
+```
+```
 curl -g 'http://localhost:8000/graphql?query={nutrients{Nutrientno,Name,Unit}}'
+```
+```
+curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{nutrients{Nutrientno,Name,Unit}}"}'
 ```
 
