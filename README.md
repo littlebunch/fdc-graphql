@@ -1,5 +1,5 @@
 # fdc-graphql
-A GraphQL prototype for Food Data Central datasets. It is built atop the [fdc-api](https://github.com/littlebunch/fdc-api) libraries and assumes you have a database build with [fdc-ingest](https://github.com/littlebunch/fdc-ingest).  The server schema is built with [graphql-go](https://github.com/graphql-go/graphql) with a playground provided by [gqlgen](https://github.com/99designs/gqlgen/handler).    
+A GraphQL prototype for Food Data Central datasets. It is built atop the [fdc-api](https://github.com/littlebunch/fdc-api) libraries and assumes you have a database built with [fdc-ingest](https://github.com/littlebunch/fdc-ingest).  The server schema is built with [graphql-go](https://github.com/graphql-go/graphql) with a playground provided by [gqlgen](https://github.com/99designs/gqlgen/handler).    
 ## Building    
 You need to have go version 1.11 or higher installed.     
 ### Step 1: Clone this repo
@@ -30,7 +30,7 @@ COUCHBASE_PWD=user_password
 ```
 ### Step 3: Start the server.
 ```
-go run main.go -c config.yml -p 8000 -r graphql
+go run main.go schema.go -c config.yml -p 8000 -r graphql
 ```
 Or, run from docker.io (Note: You will need docker installed. You will also need to pass in the Couchbase configuration as environment variables described above. The easiest way to do this is in a file, e.g. 'docker.env', of which a sample is provided in the repo's docker path.) :
 ```
