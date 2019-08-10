@@ -7,7 +7,7 @@ Clone the repo into a path *other* than your $GOPATH:
 ```
 git clone git@github.com:littlebunch/fdc-graphql.git
 ```
-### Step 2
+### Step 2 Configure the database
 cd to the fdc-graphql path and configure for your datastore by creating and populating a config.yml:
 
 
