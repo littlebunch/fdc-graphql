@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/graphql-go/graphql"
 	"github.com/littlebunch/fdc-api/ds/cb"
@@ -165,34 +166,34 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 			"fdcId": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Source": &graphql.Field{
+			"source": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Value": &graphql.Field{
+			"value": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Unit": &graphql.Field{
+			"unit": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Nutrientno": &graphql.Field{
+			"nutrientno": &graphql.Field{
 				Type: graphql.Int,
 			},
-			"Nutrient": &graphql.Field{
+			"nutrient": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Datapoints": &graphql.Field{
+			"datapoints": &graphql.Field{
 				Type: graphql.Int,
 			},
-			"Min": &graphql.Field{
+			"min": &graphql.Field{
 				Type: graphql.Float,
 			},
-			"Max": &graphql.Field{
+			"max": &graphql.Field{
 				Type: graphql.Float,
 			},
-			"Derivation": &graphql.Field{
+			"derivation": &graphql.Field{
 				Type: derivationType,
 			},
-			"Type": &graphql.Field{
+			"type": &graphql.Field{
 				Type: graphql.String,
 			},
 		},
@@ -277,35 +278,30 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 					var (
 						nut     fdc.NutrientData
 						nutdata []fdc.NutrientData
+						nIDs    []int
+						q       string
 					)
 
 					nut.FdcID = p.Args["fdcid"].(string)
-					//var nIDs []int
-					fmt.Printf("Nutids=%v\n", p.Args["nutids"] == nil)
-					/*if p.Args["nutids"] != nil {
-						for _, gnid := range p.Args["nutids"].([]interface{}) {
-							nIDs = append(nIDs, gnid.(int))
-						}
-						for nid := range nIDs {
-							fmt.Println("nid", nIDs[nid])
-						}
-						fmt.Printf("groupIDS=%v\n", nIDs[0])
-					}*/
-					if true {
-						q := fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId=\"%s\"", cs.CouchDb.Bucket, nut.FdcID)
-						query := gocb.NewN1qlQuery(q)
-						rows, err := cb.Conn.ExecuteN1qlQuery(query, nil)
-						if err != nil {
-							return nil, err
-						}
-						for rows.Next(&nut) {
-							nutdata = append(nutdata, nut)
-						}
+					// build an int array of nutrient numbers
+					for _, gnid := range p.Args["nutids"].([]interface{}) {
+						nIDs = append(nIDs, gnid.(int))
+					}
+					// put the nutrientno array into a string for the query
+					nstr := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(nIDs)), ","), "[]")
+
+					if nstr != "" {
+						q = fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId=\"%s\" and nutrientNumber in [%s]", cs.CouchDb.Bucket, nut.FdcID, nstr)
 					} else {
-						err := dc.Get(fmt.Sprintf("%s_%d", nut.FdcID, nut.Nutrientno), &nut)
-						if err != nil {
-							return nil, err
-						}
+						q = fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId=\"%s\"", cs.CouchDb.Bucket, nut.FdcID)
+					}
+					query := gocb.NewN1qlQuery(q)
+					rows, err := cb.Conn.ExecuteN1qlQuery(query, nil)
+					if err != nil {
+						return nil, err
+					}
+					// put the query results into the nutrientdata array
+					for rows.Next(&nut) {
 						nutdata = append(nutdata, nut)
 					}
 					return nutdata, nil
