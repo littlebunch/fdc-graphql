@@ -70,7 +70,10 @@ func main() {
 	//}
 	//authMiddleware := u.AuthMiddleware(session, cs.MongoDb.Collection)
 	//router := gin.Default()
-	schema, _ := initSchema(cb)
+	schema, err := initSchema(cb)
+	if err != nil {
+		log.Fatal("Cannot create the schema %v\n", err)
+	}
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())

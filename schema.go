@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/graphql-go/graphql"
@@ -198,14 +197,14 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 			},
 		},
 	})
-	nutrientIDType := graphql.NewInputObject(graphql.InputObjectConfig{
+	/*nutrientIDType := graphql.NewInputObject(graphql.InputObjectConfig{
 		Name: "nutids",
 		Fields: graphql.InputObjectConfigFieldMap{
 			"ids": &graphql.InputObjectFieldConfig{
 				Type: graphql.NewList(graphql.Int),
 			},
 		},
-	})
+	})*/
 	// Define the schema
 	rootQuery := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
@@ -270,25 +269,28 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 					},
 
 					"nutids": &graphql.ArgumentConfig{
-						Type: nutrientIDType,
+						Type: graphql.NewList(graphql.Int),
 					},
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					type P struct {
-						nids []int
-					}
+
 					var (
 						nut     fdc.NutrientData
 						nutdata []fdc.NutrientData
-						nids    P
 					)
 
 					nut.FdcID = p.Args["fdcid"].(string)
-					nutids := p.Args["nutids"].(map[string]interface{})
-					fmt.Println("NUTIDS ", nutids)
-					b, _ := json.Marshal(nutids)
-					json.Unmarshal(b, &nids)
-					fmt.Println("NIDS=", nids.nids)
+					//var nIDs []int
+					fmt.Printf("Nutids=%v\n", p.Args["nutids"] == nil)
+					/*if p.Args["nutids"] != nil {
+						for _, gnid := range p.Args["nutids"].([]interface{}) {
+							nIDs = append(nIDs, gnid.(int))
+						}
+						for nid := range nIDs {
+							fmt.Println("nid", nIDs[nid])
+						}
+						fmt.Printf("groupIDS=%v\n", nIDs[0])
+					}*/
 					if true {
 						q := fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId=\"%s\"", cs.CouchDb.Bucket, nut.FdcID)
 						query := gocb.NewN1qlQuery(q)
