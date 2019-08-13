@@ -25,22 +25,22 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 	servingType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Serving",
 		Fields: graphql.Fields{
-			"Nutrientbasis": &graphql.Field{
+			"nutrientbasis": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Description": &graphql.Field{
+			"description": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Servingstate": &graphql.Field{
+			"servingstate": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Weight": &graphql.Field{
+			"weight": &graphql.Field{
 				Type: graphql.Float,
 			},
-			"Servingamount": &graphql.Field{
+			"servingamount": &graphql.Field{
 				Type: graphql.Float,
 			},
-			"Datapoints": &graphql.Field{
+			"datapoints": &graphql.Field{
 				Type: graphql.Int,
 			},
 		},
@@ -104,19 +104,19 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 	nutrientType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Nutrient",
 		Fields: graphql.Fields{
-			"Nutrientno": &graphql.Field{
+			"nutrientno": &graphql.Field{
 				Type: graphql.Int,
 			},
-			"Tagname": &graphql.Field{
+			"tagname": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Name": &graphql.Field{
+			"name": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Unit": &graphql.Field{
+			"unit": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Type": &graphql.Field{
+			"type": &graphql.Field{
 				Type: graphql.String,
 			},
 		},
@@ -131,16 +131,16 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 	derivationType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Derivation",
 		Fields: graphql.Fields{
-			"ID": &graphql.Field{
+			"id": &graphql.Field{
 				Type: graphql.Int,
 			},
-			"Code": &graphql.Field{
+			"code": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Description": &graphql.Field{
+			"description": &graphql.Field{
 				Type: graphql.String,
 			},
-			"Type": &graphql.Field{
+			"type": &graphql.Field{
 				Type: graphql.Float,
 			},
 		},
@@ -170,7 +170,7 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 				Type: graphql.String,
 			},
 			"value": &graphql.Field{
-				Type: graphql.String,
+				Type: graphql.Float,
 			},
 			"unit": &graphql.Field{
 				Type: graphql.String,
