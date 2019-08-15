@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -198,33 +199,108 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 			},
 		},
 	})
-	/*nutrientIDType := graphql.NewInputObject(graphql.InputObjectConfig{
-		Name: "nutids",
+	browseRequestType := graphql.NewInputObject(graphql.InputObjectConfig{
+		Name: "browse",
 		Fields: graphql.InputObjectConfigFieldMap{
-			"ids": &graphql.InputObjectFieldConfig{
-				Type: graphql.NewList(graphql.Int),
+			"max": &graphql.InputObjectFieldConfig{
+				Type: graphql.Int,
+			},
+			"page": &graphql.InputObjectFieldConfig{
+				Type: graphql.Int,
+			},
+			"sort": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
+			},
+			"order": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
+			},
+			"source": &graphql.InputObjectFieldConfig{
+				Type: graphql.String,
 			},
 		},
-	})*/
+	})
 	// Define the schema
 	rootQuery := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
 			"foods": &graphql.Field{
 				Type: graphql.NewList(foodType),
+				Args: graphql.FieldConfigArgument{
+					"browse": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(browseRequestType),
+					},
+				},
+				/*Args: graphql.FieldConfigArgument{
+					"max": &graphql.ArgumentConfig{
+						Type: graphql.Int,
+					},
+					"page": &graphql.ArgumentConfig{
+						Type: graphql.Int,
+					},
+					"sort": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"order": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"source": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+				},*/
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					query := gocb.NewN1qlQuery("select food.* from gnutdata as food where type=\"FOOD\" AND dataSource=\"LI\" LIMIT 50")
-					rows, err := cb.Conn.ExecuteN1qlQuery(query, nil)
-					if err != nil {
-						return nil, err
+					var (
+						dt                  *fdc.DocType
+						max, page           int
+						sort, order, source string
+					)
+					b := p.Args["browse"].(map[string]interface{})
+					if b["max"] == nil {
+						max = 50
+					} else {
+						max = b["max"].(int)
+					}
+					if b["page"] == nil {
+						page = 0
+					} else {
+						page = b["page"].(int)
+					}
+					if b["sort"] == nil {
+						sort = "fdcId"
+					} else {
+						sort = b["sort"].(string)
+					}
+					if b["order"] == nil {
+						order = "ASC"
+					} else {
+						order = b["order"].(string)
+					}
+					if b["source"] != nil {
+						source = b["source"].(string)
+					}
 
+					if max == 0 {
+						max = 50
 					}
-					var foods []fdc.Food
-					var row fdc.Food
-					for rows.Next(&row) {
-						foods = append(foods, row)
+					if max > 150 {
+						return nil, errors.New("max parameter cannot exceed 150")
 					}
-					return foods, nil
+					if page < 0 {
+						page = 0
+					}
+					if sort == "" {
+						sort = "fdcId"
+					}
+					if order == "" {
+						order = "ASC"
+					}
+
+					offset := page * max
+					where := fmt.Sprintf("type=\"%s\" ", dt.ToString(fdc.FOOD))
+					if source != "" {
+						where = where + sourceFilter(source)
+						fmt.Printf("WHERE=%s", where)
+					}
+					return dc.Browse(cs.CouchDb.Bucket, where, int64(offset), int64(max), sort, order)
 				},
 			},
 			"food": &graphql.Field{
@@ -247,19 +323,8 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 			"nutrients": &graphql.Field{
 				Type: graphql.NewList(nutrientType),
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					q := fmt.Sprintf("select nutrient.* from %s as nutrient where type=\"NUT\"", cs.CouchDb.Bucket)
-					query := gocb.NewN1qlQuery(q)
-					rows, err := cb.Conn.ExecuteN1qlQuery(query, nil)
-					if err != nil {
-						return nil, err
-
-					}
-					var nutrients []fdc.Nutrient
-					var row fdc.Nutrient
-					for rows.Next(&row) {
-						nutrients = append(nutrients, row)
-					}
-					return nutrients, nil
+					var dt *fdc.DocType
+					return dc.GetDictionary(cs.CouchDb.Bucket, dt.ToString(fdc.NUT), 0, 300)
 				},
 			},
 			"nutrientdata": &graphql.Field{
@@ -313,4 +378,33 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 		Query: rootQuery,
 	})
 	return s, err
+}
+func useIndex(sort string, order string) string {
+	useindex := ""
+	switch sort {
+	case "foodDescription":
+		useindex = "idx_fd"
+	case "company":
+		useindex = "idx_company"
+	case "fdcid":
+	default:
+		useindex = "idx_fdcId"
+	}
+	if order == "desc" {
+		useindex = useindex + "_desc"
+	} else {
+		useindex = useindex + "_asc"
+	}
+	return useindex
+}
+func sourceFilter(s string) string {
+	w := ""
+	if s != "" {
+		if s == "BFPD" {
+			w = fmt.Sprintf(" AND ( dataSource = '%s' OR dataSource='%s' )", "LI", "GDSN")
+		} else {
+			w = fmt.Sprintf(" AND dataSource = '%s'", s)
+		}
+	}
+	return w
 }
