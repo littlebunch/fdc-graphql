@@ -46,6 +46,27 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 			},
 		},
 	})
+	/*type FoodGroup struct {
+		ID          int32  `json:"id" binding:"required"`
+		Code        string `json:"code,omitempty"`
+		Description string `json:"description" binding:"required"`
+		LastUpdate  string `json:"lastUpdate,omitempty"`
+		Type        string `json:"type" binding:"required"`
+	}*/
+	foodGroupType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "foodGroup",
+		Fields: graphql.Fields{
+			"id": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"code": &graphql.Field{
+				Type: graphql.String,
+			},
+			"description": &graphql.Field{
+				Type: graphql.String,
+			},
+		},
+	})
 	/*
 		type Food struct {
 			UpdatedAt       time.Time  `json:"lastChangeDateTime,omitempty"`
@@ -72,7 +93,7 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 			"upc": &graphql.Field{
 				Type: graphql.String,
 			},
-			"description": &graphql.Field{
+			"foodDescription": &graphql.Field{
 				Type: graphql.String,
 			},
 			"ingredients": &graphql.Field{
@@ -83,6 +104,9 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 			},
 			"company": &graphql.Field{
 				Type: graphql.String,
+			},
+			"foodGroup": &graphql.Field{
+				Type: foodGroupType,
 			},
 			"type": &graphql.Field{
 				Type: graphql.String,
@@ -199,6 +223,7 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 			},
 		},
 	})
+
 	browseRequestType := graphql.NewInputObject(graphql.InputObjectConfig{
 		Name: "browse",
 		Fields: graphql.InputObjectConfigFieldMap{
