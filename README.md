@@ -42,32 +42,34 @@ A playground is available at http://localhost:8000/graphql/.  Some queries to ru
 
 Query for a food by FDC id:
 ```
-{
-  food(id:"356427"){
-      fdcId 
-      description
-      company
-      ingredients
-      servings{
-        description
-        nutrientbasis
-        servingamount
-     }
-   }
-}
+query  {
+   food(id:"356425"){
+        fdcId
+        foodDescription
+        dataSource
+        servings{
+            nutrientbasis
+            description
+            servingamount
+        }
+        foodGroup{
+          description
+        }
+    } 
+  
 ```
 ```
-curl -g 'http://localhost:8000/graphql?query={food(id:"356427"){fdcId,description,company,ingredients,servings{description,nutrientbasis,servingamount}}}'
+curl -g 'http://localhost:8000/graphql?query={food(id:"356427"){fdcId,foodDescription,company,ingredients,servings{description,nutrientbasis,servingamount},foodGroup{description}}}'
 ```
 ```
-curl -XPOST -H "Content-type:application-json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356427\"){fdcId,description,company,ingredients,servings{description,nutrientbasis,servingamount}}}"}'
+curl -XPOST -H "Content-type:application-json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356427\"){fdcId,description,company,ingredients,servings{description,nutrientbasis,servingamount},foodGroup{description}}}"}'
 ```
 A list of foods:
 ```
 {
-   foods{
+   foods(browse:{page:0,max:50,sort:foodDescription}){
         fdcId
-        description
+        foodDescription
         company
         ingredients
         servings{
@@ -79,17 +81,17 @@ A list of foods:
 }
 ```
 ```
-curl -g 'http://localhost:8000/graphql?query={foods{fdcId,description,company,ingredients,servings{nutrientbasis, description,servingamount}}}'
+curl -g 'http://localhost:8000/graphql?query={foods(browse:{page:0,max:50,sort:"foodDescription"}){fdcId,foodDescription,company,ingredients,servings{nutrientbasis,description,servingamount}}}'
 ```
 ```
-curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{foods{fdcId,description,company,ingredients,servings{nutrientbasis, description,servingamount}}}"}'
+curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{foods(browse:{page:0,max:50,sort:\"foodDescription\"}){fdcId,foodDescription,company,ingredients,servings{nutrientbasis, description,servingamount}}}"}'
 ```
 Nutrient data for a food:
 ```
 {
    food(id:"356425"){
         fdcId
-        description
+        foodDescription
         dataSource
         servings{
             nutrientbasis
@@ -105,17 +107,17 @@ Nutrient data for a food:
 }
 ```
 ```
-curl -g 'http://localhost:8000/graphql?query={food(id:"356425"){fdcId,description,dataSource,servings{nutrientbasis,description,servingamount}}nutrientdata(fdcid:"356425",nutids:[]){nutrient,nutrientno,value}}'
+curl -g 'http://localhost:8000/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servings{nutrientbasis,description,servingamount}}nutrientdata(fdcid:"356425",nutids:[]){nutrient,nutrientno,value}}'
 ```
 ```
-curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356425\"){fdcId,description,dataSource,servings{nutrientbasis,description,servingamount}}nutrientdata(fdcid:\"356425\",nutids:[]){nutrient,nutrientno,value}}"}'
+curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356425\"){fdcId,foodDescription,dataSource,servings{nutrientbasis,description,servingamount}}nutrientdata(fdcid:\"356425\",nutids:[]){nutrient,nutrientno,value}}"}'
 ```
 Nutrient data for an individual nutrient in a food:
 ```
 {
    food(id:"356425"){
         fdcId
-        description
+        foodDescription
         dataSource
         servings{
             nutrientbasis
@@ -131,10 +133,10 @@ Nutrient data for an individual nutrient in a food:
 }
 ```
 ```
-curl -g 'http://localhost:8000/graphql?query={food(id:"356425"){fdcId,description,dataSource,servings{nutrientbasis,description,servingamount}}nutrientdata(fdcid:"356425",nutids:[203,204]){nutrient,nutrientno,value}}'
+curl -g 'http://localhost:8000/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servings{nutrientbasis,description,servingamount}}nutrientdata(fdcid:"356425",nutids:[203,204]){nutrient,nutrientno,value}}'
 ```
 ```
-curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356425\"){fdcId,description,dataSource,servings{nutrientbasis,description,servingamount}}nutrientdata(fdcid:\"356425\",nutids:[203,204]){nutrient,nutrientno,value}}"}'
+curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356425\"){fdcId,foodDescription,dataSource,servings{nutrientbasis,description,servingamount}}nutrientdata(fdcid:\"356425\",nutids:[203,204]){nutrient,nutrientno,value}}"}'
 ```
 Get a list nutrients from the database:
 ```
