@@ -1,7 +1,7 @@
 # fdc-graphql
 A GraphQL prototype for Food Data Central datasets. It is built atop the [fdc-api](https://github.com/littlebunch/fdc-api) libraries and assumes you have a database built with [fdc-ingest](https://github.com/littlebunch/fdc-ingest).  The server schema is built with [graphql-go](https://github.com/graphql-go/graphql) with a playground provided by [gqlgen](https://github.com/99designs/gqlgen/handler).    
 ## Building    
-You need to have go version 1.11 or higher installed.     
+If you are not using the available Docker image at littlebunch/fdcgql, then you need to have [Go](https://golang.org/dl/) version 1.11 or higher installed to build and run the server.     
 ### Step 1: Clone this repo
 Clone the repo into a path *other* than your $GOPATH:
 ```
