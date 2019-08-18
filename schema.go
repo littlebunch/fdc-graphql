@@ -27,22 +27,27 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 		Name: "Serving",
 		Fields: graphql.Fields{
 			"nutrientbasis": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Unit of measure which weight is reported -- either g or ml.",
 			},
 			"description": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Description of the serving",
 			},
 			"servingstate": &graphql.Field{
 				Type: graphql.String,
 			},
 			"weight": &graphql.Field{
-				Type: graphql.Float,
+				Type:        graphql.Float,
+				Description: "unit of measure equilavent weight",
 			},
 			"servingamount": &graphql.Field{
-				Type: graphql.Float,
+				Type:        graphql.Float,
+				Description: "Portion size",
 			},
 			"datapoints": &graphql.Field{
-				Type: graphql.Int,
+				Type:        graphql.Int,
+				Description: "Number of data points used in calculating the serving",
 			},
 		},
 	})
@@ -88,31 +93,39 @@ func initSchema(cb cb.Cb) (graphql.Schema, error) {
 		Name: "Food",
 		Fields: graphql.Fields{
 			"fdcId": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Food Data Central ID assigned to the food",
 			},
 			"upc": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "UPC or GTIN number assigned to the food. Applies to Branded Food Products only",
 			},
 			"foodDescription": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Name of the food",
 			},
 			"ingredients": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "List of ingredients only available for Branded Food Products items",
 			},
 			"dataSource": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Source of the food data.  SR = Standard Reference Legacy; FNDDS = Food Survey; GDSN = Global Food; LI = Label Insight",
 			},
 			"company": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Manufacturer of the food",
 			},
 			"foodGroup": &graphql.Field{
-				Type: foodGroupType,
+				Type:        foodGroupType,
+				Description: "Category assigned to the food.  Differs by dataSource",
 			},
 			"type": &graphql.Field{
 				Type: graphql.String,
 			},
 			"servings": &graphql.Field{
-				Type: graphql.NewList(servingType),
+				Type:        graphql.NewList(servingType),
+				Description: "Portion information.  A food may have several.",
 			},
 		},
 	})
