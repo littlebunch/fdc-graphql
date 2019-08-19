@@ -17,6 +17,7 @@ import (
 	"github.com/littlebunch/fdc-api/ds"
 	"github.com/littlebunch/fdc-api/ds/cb"
 	fdc "github.com/littlebunch/fdc-api/model"
+	"github.com/littlebunch/fdc-graphql/schema"
 )
 
 const (
@@ -70,7 +71,7 @@ func main() {
 	//}
 	//authMiddleware := u.AuthMiddleware(session, cs.MongoDb.Collection)
 	//router := gin.Default()
-	schema, err := initSchema(cb)
+	schema, err := schema.InitSchema(cb, cs)
 	if err != nil {
 		log.Fatal("Cannot create the schema %v\n", err)
 	}

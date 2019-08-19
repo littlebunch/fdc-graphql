@@ -11,8 +11,8 @@ import (
 	"gopkg.in/couchbase/gocb.v1"
 )
 
-// Create and return the FDC schema which is based on the fdc.Foods package
-func initSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
+// InitSchema -- Create and return the FDC schema which is based on the fdc.Foods package
+func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 	ds := &cb
 	/*
 		type Serving struct {
