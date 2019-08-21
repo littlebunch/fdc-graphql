@@ -336,7 +336,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					offset := page * max
 					where := fmt.Sprintf("type=\"%s\" ", dt.ToString(fdc.FOOD))
 					if source != "" {
-						where = where + sourceFilter(source)
+						where = where + fmt.Sprintf(" AND dataSource = '%s'", source)
 						fmt.Printf("WHERE=%s", where)
 					}
 					return ds.Browse(cs.CouchDb.Bucket, where, int64(offset), int64(max), sort, order)
@@ -369,7 +369,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			"nutrientdata": &graphql.Field{
 				Type: graphql.NewList(nutrientDataType),
 				Args: graphql.FieldConfigArgument{
-					"fdcid": &graphql.ArgumentConfig{
+					"fdcid": &graphql.ArgumentConfig{ 
 						Type: graphql.NewNonNull(graphql.String),
 					},
 
@@ -417,33 +417,4 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 		Query: rootQuery,
 	})
 	return s, err
-}
-func useIndex(sort string, order string) string {
-	useindex := ""
-	switch sort {
-	case "foodDescription":
-		useindex = "idx_fd"
-	case "company":
-		useindex = "idx_company"
-	case "fdcid":
-	default:
-		useindex = "idx_fdcId"
-	}
-	if order == "desc" {
-		useindex = useindex + "_desc"
-	} else {
-		useindex = useindex + "_asc"
-	}
-	return useindex
-}
-func sourceFilter(s string) string {
-	w := ""
-	if s != "" {
-		if s == "BFPD" {
-			w = fmt.Sprintf(" AND ( dataSource = '%s' OR dataSource='%s' )", "LI", "GDSN")
-		} else {
-			w = fmt.Sprintf(" AND dataSource = '%s'", s)
-		}
-	}
-	return w
 }
