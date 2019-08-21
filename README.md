@@ -30,7 +30,7 @@ COUCHBASE_PWD=user_password
 ```
 ### Step 3: Start the server.
 ```
-go run main.go schema.go -c config.yml -p 8000 -r graphql
+go run main.go -c config.yml -p 8000
 ```
 Or, run from docker.io (Note: You will need docker installed. You will also need to pass in the Couchbase configuration as environment variables described above. The easiest way to do this is in a file, e.g. 'docker.env', of which a sample is provided in the repo's docker path.) :
 ```
@@ -62,7 +62,7 @@ query  {
 curl -g 'http://localhost:8000/graphql?query={food(id:"356427"){fdcId,foodDescription,company,ingredients,servings{description,nutrientbasis,servingamount},foodGroup{description}}}'
 ```
 ```
-curl -XPOST -H "Content-type:application-json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356427\"){fdcId,description,company,ingredients,servings{description,nutrientbasis,servingamount},foodGroup{description}}}"}'
+curl -XPOST -H "Content-type:application-json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356427\"){fdcId,foodDescription,company,ingredients,servings{description,nutrientbasis,servingamount},foodGroup{description}}}"}'
 ```
 A list of foods:
 ```
