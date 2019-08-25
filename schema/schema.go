@@ -59,6 +59,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 		LastUpdate  string `json:"lastUpdate,omitempty"`
 		Type        string `json:"type" binding:"required"`
 	}*/
+
 	foodGroupType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "foodGroup",
 		Fields: graphql.Fields{
@@ -239,22 +240,28 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 	})
 
 	browseRequestType := graphql.NewInputObject(graphql.InputObjectConfig{
-		Name: "browse",
+		Name:        "browse",
+		Description: "Describes parameters for browse queries",
 		Fields: graphql.InputObjectConfigFieldMap{
 			"max": &graphql.InputObjectFieldConfig{
-				Type: graphql.Int,
+				Type:        graphql.Int,
+				Description: "Maximum number of items to be returned.",
 			},
 			"page": &graphql.InputObjectFieldConfig{
-				Type: graphql.Int,
+				Type:        graphql.Int,
+				Description: "Page as defined by the max parameter to start the list.  This is zero based and used to determine offsets in the list.",
 			},
 			"sort": &graphql.InputObjectFieldConfig{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Field on which browse results are to be sorted.",
 			},
 			"order": &graphql.InputObjectFieldConfig{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Sort order -- ASC or DESC.",
 			},
 			"source": &graphql.InputObjectFieldConfig{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Datasource value on which to filter results list.",
 			},
 		},
 	})
@@ -269,23 +276,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						Type: graphql.NewNonNull(browseRequestType),
 					},
 				},
-				/*Args: graphql.FieldConfigArgument{
-					"max": &graphql.ArgumentConfig{
-						Type: graphql.Int,
-					},
-					"page": &graphql.ArgumentConfig{
-						Type: graphql.Int,
-					},
-					"sort": &graphql.ArgumentConfig{
-						Type: graphql.String,
-					},
-					"order": &graphql.ArgumentConfig{
-						Type: graphql.String,
-					},
-					"source": &graphql.ArgumentConfig{
-						Type: graphql.String,
-					},
-				},*/
+				Description: "Returns a list of foods.  Parameters sent in the browse input object.",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					var (
 						dt                  *fdc.DocType
@@ -369,7 +360,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			"nutrientdata": &graphql.Field{
 				Type: graphql.NewList(nutrientDataType),
 				Args: graphql.FieldConfigArgument{
-					"fdcid": &graphql.ArgumentConfig{ 
+					"fdcid": &graphql.ArgumentConfig{
 						Type: graphql.NewNonNull(graphql.String),
 					},
 
