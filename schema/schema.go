@@ -33,7 +33,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 			"description": &graphql.Field{
 				Type:        graphql.String,
-				Description: "Description of the serving",
+				Description: "The household description of the serving",
 			},
 			"servingstate": &graphql.Field{
 				Type: graphql.String,
@@ -108,7 +108,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 			"ingredients": &graphql.Field{
 				Type:        graphql.String,
-				Description: "List of ingredients only available for Branded Food Products items",
+				Description: "The list of ingredients (as it appears on the product label).  Only available for Branded Food Products items",
 			},
 			"dataSource": &graphql.Field{
 				Type:        graphql.String,
@@ -169,16 +169,19 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 		Type        string `json:"type"`
 	}*/
 	derivationType := graphql.NewObject(graphql.ObjectConfig{
-		Name: "Derivation",
+		Name:        "Derivation",
+		Description: "Procedure indicating how a food nutrient value was obtained",
 		Fields: graphql.Fields{
 			"id": &graphql.Field{
 				Type: graphql.Int,
 			},
 			"code": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Code used for the derivation (e.g. A means analytical)",
 			},
 			"description": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Description of the derivation",
 			},
 			"type": &graphql.Field{
 				Type: graphql.Float,
@@ -210,19 +213,24 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				Type: graphql.String,
 			},
 			"value": &graphql.Field{
-				Type: graphql.Float,
+				Type:        graphql.Float,
+				Description: "Amount of the nutrient per 100g of food. Specified in unit defined in the unit field.",
 			},
 			"unit": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "The standard unit of measure for the nutrient (g or ml)",
 			},
 			"nutrientno": &graphql.Field{
-				Type: graphql.Int,
+				Type:        graphql.Int,
+				Description: "ID of the nutrient to which the food nutrient pertains",
 			},
 			"nutrient": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Name of the nutrient",
 			},
 			"datapoints": &graphql.Field{
-				Type: graphql.Int,
+				Type:        graphql.Int,
+				Description: "Number of observations on which the value is based",
 			},
 			"min": &graphql.Field{
 				Type: graphql.Float,
@@ -340,6 +348,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						Type: graphql.NewNonNull(graphql.String),
 					},
 				},
+				Description: "Returns a food for a given fdcId.",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					var food fdc.Food
 					food.FdcID = p.Args["id"].(string)
@@ -351,7 +360,8 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				},
 			},
 			"nutrients": &graphql.Field{
-				Type: graphql.NewList(nutrientType),
+				Type:        graphql.NewList(nutrientType),
+				Description: "Returns a list of nutrients used in the database",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					var dt *fdc.DocType
 					return ds.GetDictionary(cs.CouchDb.Bucket, dt.ToString(fdc.NUT), 0, 300)
@@ -368,6 +378,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						Type: graphql.NewList(graphql.Int),
 					},
 				},
+				Description: "Returns one or more nutrient values for a food.",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 
 					var (
@@ -404,8 +415,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 		},
 	})
-	s, err := graphql.NewSchema(graphql.SchemaConfig{
+	return graphql.NewSchema(graphql.SchemaConfig{
 		Query: rootQuery,
 	})
-	return s, err
 }
