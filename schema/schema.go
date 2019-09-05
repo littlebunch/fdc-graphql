@@ -207,7 +207,8 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 		Name: "NutrientData",
 		Fields: graphql.Fields{
 			"fdcId": &graphql.Field{
-				Type: graphql.String,
+				Type:        graphql.String,
+				Description: "Food Data Central id of the food to which the data belongs",
 			},
 			"source": &graphql.Field{
 				Type: graphql.String,
@@ -233,13 +234,16 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				Description: "Number of observations on which the value is based",
 			},
 			"min": &graphql.Field{
-				Type: graphql.Float,
+				Type:        graphql.Float,
+				Description: "Minimum number of observations",
 			},
 			"max": &graphql.Field{
-				Type: graphql.Float,
+				Type:        graphql.Float,
+				Description: "Maximum number of observations",
 			},
 			"derivation": &graphql.Field{
-				Type: derivationType,
+				Type:        derivationType,
+				Description: "Derivation information",
 			},
 			"type": &graphql.Field{
 				Type: graphql.String,
@@ -336,7 +340,6 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					where := fmt.Sprintf("type=\"%s\" ", dt.ToString(fdc.FOOD))
 					if source != "" {
 						where = where + fmt.Sprintf(" AND dataSource = '%s'", source)
-						fmt.Printf("WHERE=%s", where)
 					}
 					return ds.Browse(cs.CouchDb.Bucket, where, int64(offset), int64(max), sort, order)
 				},
