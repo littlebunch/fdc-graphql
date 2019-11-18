@@ -16,37 +16,37 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 	ds := &cb
 	/*
 		type Serving struct {
-			Nutrientbasis string  `json:"100UnitNutrientBasis,omitempty"`
-			Description   string  `json:"householdServingUom"`
+			Nutrientbasis string  `json:"nutrientBasis,omitempty"`
+			Description   string  `json:"servingUnit"`
 			Servingstate  string  `json:"servingState,omitempty"`
-			Weight        float32 `json:"weightInGmOrMl"`
-			Servingamount float32 `json:"householdServingValue,omitempty"`
-			Datapoints    int32   `json:"datapoints,omitempty"`
+			Weight        float32 `json:"weight"`
+			Servingamount float32 `json:"value,omitempty"`
+			Datapoints    int32   `json:"dataPoints,omitempty"`
 			}
 	*/
 	servingType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Serving",
 		Fields: graphql.Fields{
-			"nutrientbasis": &graphql.Field{
+			"nutrientBasis": &graphql.Field{
 				Type:        graphql.String,
 				Description: "Unit of measure which weight is reported -- either g or ml.",
 			},
-			"description": &graphql.Field{
+			"servingUnit": &graphql.Field{
 				Type:        graphql.String,
 				Description: "The household description of the serving",
 			},
-			"servingstate": &graphql.Field{
+			"servingState": &graphql.Field{
 				Type: graphql.String,
 			},
 			"weight": &graphql.Field{
 				Type:        graphql.Float,
 				Description: "unit of measure equilavent weight",
 			},
-			"servingamount": &graphql.Field{
+			"value": &graphql.Field{
 				Type:        graphql.Float,
 				Description: "Portion size",
 			},
-			"datapoints": &graphql.Field{
+			"dataPoints": &graphql.Field{
 				Type:        graphql.Int,
 				Description: "Number of data points used in calculating the serving",
 			},
@@ -125,7 +125,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			"type": &graphql.Field{
 				Type: graphql.String,
 			},
-			"servings": &graphql.Field{
+			"servingSizes": &graphql.Field{
 				Type:        graphql.NewList(servingType),
 				Description: "Portion information.  A food may have several.",
 			},
@@ -341,6 +341,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					if source != "" {
 						where = where + fmt.Sprintf(" AND dataSource = '%s'", source)
 					}
+
 					return ds.Browse(cs.CouchDb.Bucket, where, int64(offset), int64(max), sort, order)
 				},
 			},
