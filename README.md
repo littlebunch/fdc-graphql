@@ -1,5 +1,5 @@
 # fdc-graphql
-A GraphQL prototype for Food Data Central datasets. It is built atop the [fdc-api](https://github.com/littlebunch/fdc-api) libraries and assumes you have a database built with [fdc-ingest](https://github.com/littlebunch/fdc-ingest).  The server schema is built with [graphql-go](https://github.com/graphql-go/graphql) with a playground provided by [gqlgen](https://github.com/99designs/gqlgen/handler).    
+A GraphQL prototype for Food Data Central datasets. It is built atop the [fdc-api](https://github.com/littlebunch/fdc-api) libraries and assumes you have a database built with [fdc-ingest](https://github.com/littlebunch/fdc-ingest).  The server schema is built with [graphql-go](https://github.com/graphql-go/graphql) with a playground provided by [gqlgen](https://github.com/99designs/gqlgen/handler).  A demo playground using the FDC [Branded Food Products](https://fdc.nal.usda.gov/data-documentation.html) dataset is available at https://go.littlebunch.com/graphql/.
 ## Building    
 If you are not using the available Docker image at littlebunch/fdcgql, then you need to have [Go](https://golang.org/dl/) version 1.11 or higher installed to build and run the server.     
 ### Step 1: Clone this repo
@@ -38,7 +38,7 @@ docker run --rm -it -p 8000:8000 --env-file=./docker.env littlebunch/fdcgql
 ```
     
 ### Usage
-A playground is available at http://localhost:8000/graphql/.  Some queries to run include:
+Some queries to run from the [playground[(https://go.littlebunch.com/graphql/) include:
 
 Query for a food by FDC id:
 ```
@@ -56,13 +56,14 @@ query  {
           description
         }
     } 
+}
   
 ```
 ```
-curl -g 'http://localhost:8000/graphql?query={food(id:"356427"){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis,servingUnit,value},foodGroup{description}}}'
+curl -g 'https://go.littlebunch.com/graphql?query={food(id:"356427"){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis,servingUnit,value},foodGroup{description}}}'
 ```
 ```
-curl -XPOST -H "Content-type:application-json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356427\"){fdcId,foodDescription,company,ingredients,servingSizes{servingUnit,nutrientBasis,value},foodGroup{description}}}"}'
+curl -XPOST -H "Content-type:application-json" https://go.littlebunch.com/graphql -d '{"query":"{food(id:\"356427\"){fdcId,foodDescription,company,ingredients,servingSizes{servingUnit,nutrientBasis,value},foodGroup{description}}}"}'
 ```
 A list of foods:
 ```
@@ -81,10 +82,10 @@ A list of foods:
 }
 ```
 ```
-curl -g 'http://localhost:8000/graphql?query={foods(browse:{page:0,max:50,sort:\"foodDescription\"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis,servingUnit,value}}}'
+curl -g 'https://go.littlebunch.com/graphql?query={foods(browse:{page:0,max:50,sort:"foodDescription"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis,servingUnit,value}}}' [browser](https://go.littlebunch.com/graphql?query={foods(browse:{page:0,max:50,sort:"foodDescription"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis,servingUnit,value}}})
 ```
 ```
-curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{foods(browse:{page:0,max:50,sort:\"foodDescription\"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis, servingUnit,value}}}"}'
+curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{foods(browse:{page:0,max:50,sort:\"foodDescription\"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis, servingUnit,value}}}"}'
 ```
 Nutrient data for a food:
 ```
@@ -99,7 +100,7 @@ Nutrient data for a food:
             value
          }
     }
-    nutrientdata(fdcid:"356425",nutid:[]){
+    nutrientdata(fdcid:"356425",nutids:[]){
         nutrient
         nutrientno
         value
@@ -107,10 +108,10 @@ Nutrient data for a food:
 }
 ```
 ```
-curl -g 'http://localhost:8000/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:"356425",nutids:[]){nutrient,nutrientno,value}}'
+curl -g 'https://go.littlebunch.com/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:"356425",nutids:[]){nutrient,nutrientno,value}}'
 ```
 ```
-curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356425\"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:\"356425\",nutids:[]){nutrient,nutrientno,value}}"}'
+curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{food(id:\"356425\"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:\"356425\",nutids:[]){nutrient,nutrientno,value}}"}'
 ```
 Nutrient data for an individual nutrient in a food:
 ```
@@ -133,10 +134,10 @@ Nutrient data for an individual nutrient in a food:
 }
 ```
 ```
-curl -g 'http://localhost:8000/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}nutrientdata(fdcid:"356425",nutids:[203,204]){nutrient,nutrientno,value}}'
+curl -g 'https://go.littlebunch.com/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:"356425",nutids:[203,204]){nutrient,nutrientno,value}}'
 ```
 ```
-curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{food(id:\"356425\"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:\"356425\",nutids:[203,204]){nutrient,nutrientno,value}}"}'
+curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{food(id:\"356425\"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:\"356425\",nutids:[203,204]){nutrient,nutrientno,value}}"}'
 ```
 Get a list nutrients from the database:
 ```
@@ -149,9 +150,9 @@ Get a list nutrients from the database:
 }
 ```
 ```
-curl -g 'http://localhost:8000/graphql?query={nutrients{nutrientno,name,unit}}'
+curl -g 'https://go.littlebunch.com/graphql?query={nutrients{nutrientno,name,unit}}'
 ```
 ```
-curl -XPOST -H "Content-type:application/json" http://localhost:8000/graphql -d '{"query":"{nutrients{nutrientno,name,unit}}"}'
+curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{nutrients{nutrientno,name,unit}}"}'
 ```
 
