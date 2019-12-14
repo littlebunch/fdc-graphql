@@ -38,7 +38,7 @@ docker run --rm -it -p 8000:8000 --env-file=./docker.env littlebunch/fdcgql
 ```
     
 ### Usage
-Some queries to run from the [playground[(https://go.littlebunch.com/graphql/) include:
+Some queries to run from the [playground](https://go.littlebunch.com/graphql/) include:
 
 Query for a food by FDC id:
 ```
@@ -82,7 +82,7 @@ A list of foods:
 }
 ```
 ```
-curl -g 'https://go.littlebunch.com/graphql?query={foods(browse:{page:0,max:50,sort:"foodDescription"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis,servingUnit,value}}}' [browser](https://go.littlebunch.com/graphql?query={foods(browse:{page:0,max:50,sort:"foodDescription"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis,servingUnit,value}}})
+curl -g 'https://go.littlebunch.com/graphql?query={foods(browse:{page:0,max:50,sort:"foodDescription"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis,servingUnit,value}}}' 
 ```
 ```
 curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{foods(browse:{page:0,max:50,sort:\"foodDescription\"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis, servingUnit,value}}}"}'
