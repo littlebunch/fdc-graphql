@@ -1,0 +1,25 @@
+[Unit]
+Description=Food Data Central GraphQL API service
+Wants=network.target
+After=network.target
+
+[Service]
+Type=simple
+User=fdcapi
+Group=fdcapi
+Environment="GIN_MODE=release"
+WorkingDirectory=/opt/fdcgql
+ExecStart=/opt/fdcgql/bin/fdcgql -c /opt/fdcgql/conf/config.yml -p 8000
+Restart=always
+RestartSec=2
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+#PermissionsStartOnly=true
+#ExecStartPre=/bin/mkdir -p /var/log/fdcgql
+#ExecStartPre=/bin/chown syslog:adm /var/log/fdcgql
+#ExecStartPre=/bin/chmod 755 /var/log/fdcgql
+#StandardOutput=syslog
+#SyslogIdentifier=fdcgql
+
+[Install]
+WantedBy=multi-user.target

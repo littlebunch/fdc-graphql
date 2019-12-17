@@ -30,7 +30,7 @@ var (
 	d   = flag.Bool("d", false, "Debug")
 	i   = flag.Bool("i", false, "Initialize the authentication store")
 	c   = flag.String("c", "config.yml", "YAML Config file")
-	l   = flag.String("l", "/tmp/bfpd.out", "send log output to this file -- defaults to /tmp/bfpd.out")
+	l   = flag.String("l", "/tmp/fdcgql.out", "send log output to this file -- defaults to /tmp/fdcgcl.out")
 	p   = flag.String("p", "8000", "TCP port to used")
 	r   = flag.String("r", "graphql", "root path to deploy -- defaults to 'v1'")
 	cs  fdc.Config
