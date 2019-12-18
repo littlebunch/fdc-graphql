@@ -242,12 +242,17 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						dt                  *fdc.DocType
 						max, page           int
 						sort, order, source string
+						err                 error
+						r                   interface{}
 					)
 					b := p.Args["browse"].(map[string]interface{})
 					if b["max"] == nil {
 						max = 50
 					} else {
 						max = b["max"].(int)
+					}
+					if max > 150 {
+						err = errors.New("cannot return more than 150 items")
 					}
 					if b["page"] == nil {
 						page = 0
@@ -271,7 +276,8 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						max = 50
 					}
 					if max > 150 {
-						return nil, errors.New("max parameter cannot exceed 150")
+						err = errors.New("max parameter cannot exceed 150")
+						max = 50
 					}
 					if page < 0 {
 						page = 0
@@ -282,14 +288,18 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					if order == "" {
 						order = "ASC"
 					}
-
+					if sort != "foodDescription" && sort != "company" && sort != "fdcId" {
+						err = errors.New("unrecognized sort parameter.  Must be 'company', 'name' or 'fdcId'")
+						sort = "fdcId"
+					}
+					fmt.Println("MAX=", max)
 					offset := page * max
 					where := fmt.Sprintf("type=\"%s\" ", dt.ToString(fdc.FOOD))
 					if source != "" {
 						where = where + fmt.Sprintf(" AND dataSource = '%s'", source)
 					}
-
-					return ds.Browse(cs.CouchDb.Bucket, where, int64(offset), int64(max), sort, order)
+					r, _ = ds.Browse(cs.CouchDb.Bucket, where, int64(offset), int64(max), sort, order)
+					return r, err
 				},
 			},
 			"food": &graphql.Field{
@@ -321,8 +331,8 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			"nutrientdata": &graphql.Field{
 				Type: graphql.NewList(nutrientDataType),
 				Args: graphql.FieldConfigArgument{
-					"fdcid": &graphql.ArgumentConfig{
-						Type: graphql.NewNonNull(graphql.String),
+					"fdcids": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.NewList(graphql.String)),
 					},
 
 					"nutids": &graphql.ArgumentConfig{
@@ -335,11 +345,24 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					var (
 						nut     fdc.NutrientData
 						nutdata []fdc.NutrientData
+						rows    gocb.QueryResults
 						nIDs    []int
+						fIDs    string
 						q       string
+						err     error
 					)
 
-					nut.FdcID = p.Args["fdcid"].(string)
+					// build a string array of FDC id's
+					i := 0
+					for _, fid := range p.Args["fdcids"].([]interface{}) {
+						fIDs += fmt.Sprintf("\"%s\",", fid.(string))
+						i++
+						if i > 1 {
+							err = errors.New("number of fdcId's should not exceed 24")
+							break
+						}
+					}
+					fIDs = strings.Trim(fIDs, ",")
 					// build an int array of nutrient numbers
 					for _, gnid := range p.Args["nutids"].([]interface{}) {
 						nIDs = append(nIDs, gnid.(int))
@@ -348,12 +371,11 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					nstr := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(nIDs)), ","), "[]")
 
 					if nstr != "" {
-						q = fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId=\"%s\" and nutrientNumber in [%s]", cs.CouchDb.Bucket, nut.FdcID, nstr)
+						q = fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId in [%s] and nutrientNumber in [%s] order by fdcId,nutrientNumber", cs.CouchDb.Bucket, fIDs, nstr)
 					} else {
-						q = fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId=\"%s\"", cs.CouchDb.Bucket, nut.FdcID)
+						q = fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId in [%s] order by fdcId,nutrientNumber", cs.CouchDb.Bucket, fIDs)
 					}
-					query := gocb.NewN1qlQuery(q)
-					rows, err := cb.Conn.ExecuteN1qlQuery(query, nil)
+					rows, err = cb.Conn.ExecuteN1qlQuery(gocb.NewN1qlQuery(q), nil)
 					if err != nil {
 						return nil, err
 					}
@@ -361,7 +383,8 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					for rows.Next(&nut) {
 						nutdata = append(nutdata, nut)
 					}
-					return nutdata, nil
+
+					return nutdata, err
 				},
 			},
 		},
