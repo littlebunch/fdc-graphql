@@ -357,7 +357,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					for _, fid := range p.Args["fdcids"].([]interface{}) {
 						fIDs += fmt.Sprintf("\"%s\",", fid.(string))
 						i++
-						if i > 1 {
+						if i > 23 {
 							err = errors.New("number of fdcId's should not exceed 24")
 							break
 						}
