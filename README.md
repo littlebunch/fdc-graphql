@@ -100,7 +100,7 @@ Nutrient data for a food:
             value
          }
     }
-    nutrientdata(fdcid:["356425"],nutids:[]){
+    nutrientdata(fdcids:["356425"],nutids:[]){
         nutrient
         nutrientno
         value
@@ -108,10 +108,10 @@ Nutrient data for a food:
 }
 ```
 ```
-curl -g 'https://go.littlebunch.com/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:["356425"],nutids:[]){nutrient,nutrientno,value}}'
+curl -g 'https://go.littlebunch.com/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcids:["356425"],nutids:[]){nutrient,nutrientno,value}}'
 ```
 ```
-curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:["356425"],nutids:[]){nutrient,nutrientno,value}}"}'
+curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcids:["356425"],nutids:[]){nutrient,nutrientno,value}}"}'
 ```
 Nutrient data for an individual nutrient in a food:
 ```
@@ -126,7 +126,7 @@ Nutrient data for an individual nutrient in a food:
             value
         }
     } 
-    nutrientdata(fdcid:["356425"],nutids:[203,204]){
+    nutrientdata(fdcids:["356425"],nutids:[203,204]){
         nutrient
         nutrientno
         value
@@ -134,10 +134,10 @@ Nutrient data for an individual nutrient in a food:
 }
 ```
 ```
-curl -g 'https://go.littlebunch.com/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:["356425"],nutids:[203,204]){nutrient,nutrientno,value}}'
+curl -g 'https://go.littlebunch.com/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcids:["356425"],nutids:[203,204]){nutrient,nutrientno,value}}'
 ```
 ```
-curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcid:["356425"],nutids:[203,204]){nutrient,nutrientno,value}}"}'
+curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcids:["356425"],nutids:[203,204]){nutrient,nutrientno,value}}"}'
 ```
 Get a list nutrients from the database:
 ```
