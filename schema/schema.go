@@ -14,16 +14,7 @@ import (
 // InitSchema -- Create and return the FDC schema which is based on the fdc.Foods package
 func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 	ds := &cb
-	/*
-		type Serving struct {
-			Nutrientbasis string  `json:"nutrientBasis,omitempty"`
-			Description   string  `json:"servingUnit"`
-			Servingstate  string  `json:"servingState,omitempty"`
-			Weight        float32 `json:"weight"`
-			Servingamount float32 `json:"value,omitempty"`
-			Datapoints    int32   `json:"dataPoints,omitempty"`
-			}
-	*/
+	// food servings
 	servingType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Serving",
 		Fields: graphql.Fields{
@@ -52,14 +43,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 		},
 	})
-	/*type FoodGroup struct {
-		ID          int32  `json:"id" binding:"required"`
-		Code        string `json:"code,omitempty"`
-		Description string `json:"description" binding:"required"`
-		LastUpdate  string `json:"lastUpdate,omitempty"`
-		Type        string `json:"type" binding:"required"`
-	}*/
-
+	// food categories
 	foodGroupType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "foodGroup",
 		Fields: graphql.Fields{
@@ -74,23 +58,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 		},
 	})
-	/*
-		type Food struct {
-			UpdatedAt       time.Time  `json:"lastChangeDateTime,omitempty"`
-			FdcID           string     `json:"fdcId" binding:"required"`
-			NdbNo           string     `json:"ndbno,omitempty"`
-			Upc             string     `json:"upc,omitempty"`
-			Description     string     `json:"foodDescription" binding:"required"`
-			Source          string     `json:"dataSource"`
-			PublicationDate time.Time  `json:"publicationDateTime"`
-			Ingredients     string     `json:"ingredients,omitempty"`
-			Manufacturer    string     `json:"company,omitempty"`
-			Group           *FoodGroup `json:"foodGroup,omitempty"`
-			Servings        []Serving  `json:"servingSizes,omitempty"``
-			Type       string      `json:"type" binding:"required"`
-			InputFoods []InputFood `json:"inputfoods,omitempty"`
-		}
-	*/
+	// food meta data
 	foodType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Food",
 		Fields: graphql.Fields{
@@ -131,16 +99,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 		},
 	})
-	/*
-		type Nutrient struct {
-			NutrientID uint   `json:"id" binding:"required"`
-			Nutrientno uint   `json:"nutrientno" binding:"required"`
-			Tagname    string `json:"tagname,omitempty"`
-			Name       string `json:"name"  binding:"required"`
-			Unit       string `json:"unit"  binding:"required"`
-			Type       string `json:"type"  binding:"required"`
-		}
-	*/
+	// nutrient
 	nutrientType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Nutrient",
 		Fields: graphql.Fields{
@@ -161,13 +120,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 		},
 	})
-	/*
-		type Derivation struct {
-		ID          int32  `json:"id" binding:"required"`
-		Code        string `json:"code" binding:"required"`
-		Description string `json:"description"`
-		Type        string `json:"type"`
-	}*/
+	// nutrient derivation
 	derivationType := graphql.NewObject(graphql.ObjectConfig{
 		Name:        "Derivation",
 		Description: "Procedure indicating how a food nutrient value was obtained",
@@ -188,21 +141,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 		},
 	})
-	/*
-		type NutrientData struct {
-			FdcID      string      `json:"fdcId" binding:"required"`
-			Source     string      `json:"Datasource"`
-			Type       string      `json:"type"`
-			Value      float32     `json:"valuePer100UnitServing"`
-			Unit       string      `json:"unit"  binding:"required"`
-			Derivation *Derivation `json:"derivation,omitempty"`
-			Nutrientno uint        `json:"nutrientNumber"`
-			Nutrient   string      `json:"nutrientName"`
-			Datapoints int         `json:"datapoints,omitempty"`
-			Min        float32     `json:"min,omitempty"`
-			Max        float32     `json:"max,omitempty"`
-		}
-	*/
+	// food nutrient data
 	nutrientDataType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "NutrientData",
 		Fields: graphql.Fields{
@@ -251,6 +190,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 		},
 	})
 
+	// browse request
 	browseRequestType := graphql.NewInputObject(graphql.InputObjectConfig{
 		Name:        "browse",
 		Description: "Describes parameters for browse queries",
@@ -271,9 +211,17 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				Type:        graphql.String,
 				Description: "Sort order -- ASC or DESC.",
 			},
-			"source": &graphql.InputObjectFieldConfig{
+			"searchTerms": &graphql.InputObjectFieldConfig{
 				Type:        graphql.String,
-				Description: "Datasource value on which to filter results list.",
+				Description: "Terms to filter results list. (optional)",
+			},
+			"searchField": &graphql.InputObjectFieldConfig{
+				Type:        graphql.String,
+				Description: "Field to limit term searches (optional)",
+			},
+			"searchType": &graphql.InputObjectFieldConfig{
+				Type:        graphql.String,
+				Description: "Type of search to perform: MATCH, PHRASE, WILDCARD or REGEX. (optional)  ",
 			},
 		},
 	})
@@ -319,7 +267,6 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					if b["source"] != nil {
 						source = b["source"].(string)
 					}
-
 					if max == 0 {
 						max = 50
 					}
