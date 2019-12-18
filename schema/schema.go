@@ -343,13 +343,13 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 
 					var (
-						nut     fdc.NutrientData
-						nutdata []fdc.NutrientData
-						rows    gocb.QueryResults
-						nIDs    []int
-						fIDs    string
-						q       string
-						err     error
+						nut       fdc.NutrientData
+						nutdata   []fdc.NutrientData
+						rows      gocb.QueryResults
+						nIDs      []int
+						fIDs      string
+						q         string
+						err, errs error
 					)
 
 					// build a string array of FDC id's
@@ -358,7 +358,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						fIDs += fmt.Sprintf("\"%s\",", fid.(string))
 						i++
 						if i > 23 {
-							err = errors.New("number of fdcId's should not exceed 24")
+							errs = errors.New("number of fdcId's should not exceed 24")
 							break
 						}
 					}
@@ -383,7 +383,9 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					for rows.Next(&nut) {
 						nutdata = append(nutdata, nut)
 					}
-
+					if err == nil {
+						err = errs
+					}
 					return nutdata, err
 				},
 			},
