@@ -87,6 +87,17 @@ curl -g 'https://go.littlebunch.com/graphql?query={foods(browse:{page:0,max:50,s
 ```
 curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{foods(browse:{page:0,max:50,sort:\"foodDescription\"}){fdcId,foodDescription,company,ingredients,servingSizes{nutrientBasis, servingUnit,value}}}"}'
 ```
+A list of foods given a list of FDC id's:
+```
+{
+   foods(browse:{page:0,max:50,fdcids:["344604","344605","344606"]}){
+        fdcId
+        foodDescription
+        company
+        ingredients
+    }
+}
+```
 Nutrient data for a food:
 ```
 {

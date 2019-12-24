@@ -211,17 +211,8 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				Type:        graphql.String,
 				Description: "Sort order -- ASC or DESC.",
 			},
-			"searchTerms": &graphql.InputObjectFieldConfig{
-				Type:        graphql.String,
-				Description: "Terms to filter results list. (optional)",
-			},
-			"searchField": &graphql.InputObjectFieldConfig{
-				Type:        graphql.String,
-				Description: "Field to limit term searches (optional)",
-			},
-			"searchType": &graphql.InputObjectFieldConfig{
-				Type:        graphql.String,
-				Description: "Type of search to perform: MATCH, PHRASE, WILDCARD or REGEX. (optional)  ",
+			"fdcids": &graphql.InputObjectFieldConfig{
+				Type: graphql.NewList(graphql.String),
 			},
 		},
 	})
@@ -244,7 +235,9 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						sort, order, source string
 						err                 error
 						r                   interface{}
+						fIDs                string
 					)
+					i := 0
 					b := p.Args["browse"].(map[string]interface{})
 					if b["max"] == nil {
 						max = 50
@@ -292,9 +285,23 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						err = errors.New("unrecognized sort parameter.  Must be 'company', 'name' or 'fdcId'")
 						sort = "fdcId"
 					}
-					fmt.Println("MAX=", max)
 					offset := page * max
 					where := fmt.Sprintf("type=\"%s\" ", dt.ToString(fdc.FOOD))
+
+					if b["fdcids"] != nil {
+						for _, fid := range b["fdcids"].([]interface{}) {
+							fIDs += fmt.Sprintf("\"%s\",", fid.(string))
+							i++
+							if i > 23 {
+								err = errors.New("number of fdcId's should not exceed 24")
+								break
+							}
+						}
+						fIDs = strings.Trim(fIDs, ",")
+						if fIDs != "" {
+							where += fmt.Sprintf(" AND fdcId in [%s]", fIDs)
+						}
+					}
 					if source != "" {
 						where = where + fmt.Sprintf(" AND dataSource = '%s'", source)
 					}
