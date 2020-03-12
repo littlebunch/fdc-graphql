@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -9,6 +8,12 @@ import (
 	"github.com/littlebunch/fdc-api/ds/cb"
 	fdc "github.com/littlebunch/fdc-api/model"
 	"gopkg.in/couchbase/gocb.v1"
+)
+
+// Maximum number of FDC Id's that may be requested per query
+const (
+	MAXIDS  = 100
+	MAXPAGE = 150
 )
 
 // InitSchema -- Create and return the FDC schema which is based on the fdc.Foods package
@@ -55,6 +60,49 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 			"description": &graphql.Field{
 				Type: graphql.String,
+			},
+		},
+	})
+	type FoodMeta struct {
+		FdcID        string `json:"fdcId" binding:"required"`
+		Upc          string `json:"upc"`
+		Description  string `json:"foodDescription" binding:"required"`
+		Ingredients  string `json:"ingredients,omitempty"`
+		Source       string `json:"dataSource"`
+		Manufacturer string `json:"company,omitempty"`
+		Type         string `json:"type"`
+		Category     string `json:"foodgroup.description,omitempty"`
+	}
+	foodSearchType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "FoodSearch",
+		Fields: graphql.Fields{
+			"fdcId": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Food Data Central ID assigned to the food",
+			},
+			"upc": &graphql.Field{
+				Type:        graphql.String,
+				Description: "UPC or GTIN number assigned to the food. Applies to Branded Food Products only",
+			},
+			"foodDescription": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Name of the food",
+			},
+			"ingredients": &graphql.Field{
+				Type:        graphql.String,
+				Description: "The list of ingredients (as it appears on the product label).  Only available for Branded Food Products items",
+			},
+			"dataSource": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Source of the food data.  SR = Standard Reference Legacy; FNDDS = Food Survey; GDSN = Global Food; LI = Label Insight",
+			},
+			"company": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Manufacturer of the food",
+			},
+			"category": &graphql.Field{
+				Type:        graphql.String,
+				Description: "Category assigned to the food.  Differs by dataSource",
 			},
 		},
 	})
@@ -190,6 +238,32 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 		},
 	})
 
+	searchRequestType := graphql.NewInputObject(graphql.InputObjectConfig{
+		Name:        "query",
+		Description: "Describes parameters for search queries",
+		Fields: graphql.InputObjectConfigFieldMap{
+			"terms": &graphql.InputObjectFieldConfig{
+				Type:        graphql.String,
+				Description: "Terms to include in the search",
+			},
+			"field": &graphql.InputObjectFieldConfig{
+				Type:        graphql.String,
+				Description: "Limit search terms to a particular field ",
+			},
+			"type": &graphql.InputObjectFieldConfig{
+				Type:        graphql.String,
+				Description: "Type of search to run",
+			},
+			"page": &graphql.InputObjectFieldConfig{
+				Type:        graphql.Int,
+				Description: "Page as defined by the max parameter to start the list.  This is zero based and used to determine offsets in the list.",
+			},
+			"max": &graphql.InputObjectFieldConfig{
+				Type:        graphql.Int,
+				Description: "Maximum number of items to return. ",
+			},
+		},
+	})
 	// browse request
 	browseRequestType := graphql.NewInputObject(graphql.InputObjectConfig{
 		Name:        "browse",
@@ -211,16 +285,45 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				Type:        graphql.String,
 				Description: "Sort order -- ASC or DESC.",
 			},
-			"fdcids": &graphql.InputObjectFieldConfig{
-				Type: graphql.NewList(graphql.String),
-			},
 		},
 	})
+
 	// Define the schema
 	rootQuery := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
 			"foods": &graphql.Field{
+				Type: graphql.NewList(foodType),
+				Args: graphql.FieldConfigArgument{
+					"fdcids": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.NewList(graphql.String)),
+					},
+				},
+				Description: "Returns a list of foods.  Parameters sent in the browse input object.",
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					var (
+						dt   *fdc.DocType
+						s    string
+						errs error
+						r    interface{}
+						fIDs string
+					)
+					where := fmt.Sprintf("type=\"%s\" ", dt.ToString(fdc.FOOD))
+					if p.Args["fdcids"] != nil {
+						fIDs, s = fdcids(p.Args["fdcids"].([]interface{}))
+						if s != "" {
+							errs = setError(&errs, s)
+						}
+						if fIDs != "" {
+							where += fmt.Sprintf("AND fdcId in [%s]", fIDs)
+						}
+					}
+
+					r, _ = ds.Browse(cs.CouchDb.Bucket, where, int64(0), int64(2), "fdcId", "desc")
+					return r, errs
+				},
+			},
+			"foodsBrowse": &graphql.Field{
 				Type: graphql.NewList(foodType),
 				Args: graphql.FieldConfigArgument{
 					"browse": &graphql.ArgumentConfig{
@@ -233,11 +336,9 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						dt                  *fdc.DocType
 						max, page           int
 						sort, order, source string
-						err                 error
+						errs                error
 						r                   interface{}
-						fIDs                string
 					)
-					i := 0
 					b := p.Args["browse"].(map[string]interface{})
 					if b["max"] == nil {
 						max = 50
@@ -245,7 +346,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						max = b["max"].(int)
 					}
 					if max > 150 {
-						err = errors.New("cannot return more than 150 items")
+						errs = setError(&errs, "cannot return more than 150 items")
 					}
 					if b["page"] == nil {
 						page = 0
@@ -268,9 +369,9 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					if max == 0 {
 						max = 50
 					}
-					if max > 150 {
-						err = errors.New("max parameter cannot exceed 150")
-						max = 50
+					if max > MAXPAGE {
+						errs = setError(&errs, fmt.Sprintf("max parameter cannot exceed %d", MAXPAGE))
+						max = MAXPAGE
 					}
 					if page < 0 {
 						page = 0
@@ -282,31 +383,17 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						order = "ASC"
 					}
 					if sort != "foodDescription" && sort != "company" && sort != "fdcId" {
-						err = errors.New("unrecognized sort parameter.  Must be 'company', 'name' or 'fdcId'")
+						errs = setError(&errs, "unrecognized sort parameter.  Must be 'company', 'foodDescription' or 'fdcId'")
 						sort = "fdcId"
 					}
 					offset := page * max
 					where := fmt.Sprintf("type=\"%s\" ", dt.ToString(fdc.FOOD))
 
-					if b["fdcids"] != nil {
-						for _, fid := range b["fdcids"].([]interface{}) {
-							fIDs += fmt.Sprintf("\"%s\",", fid.(string))
-							i++
-							if i > 23 {
-								err = errors.New("number of fdcId's should not exceed 24")
-								break
-							}
-						}
-						fIDs = strings.Trim(fIDs, ",")
-						if fIDs != "" {
-							where += fmt.Sprintf(" AND fdcId in [%s]", fIDs)
-						}
-					}
 					if source != "" {
 						where = where + fmt.Sprintf(" AND dataSource = '%s'", source)
 					}
 					r, _ = ds.Browse(cs.CouchDb.Bucket, where, int64(offset), int64(max), sort, order)
-					return r, err
+					return r, errs
 				},
 			},
 			"food": &graphql.Field{
@@ -360,16 +447,8 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					)
 
 					// build a string array of FDC id's
-					i := 0
-					for _, fid := range p.Args["fdcids"].([]interface{}) {
-						fIDs += fmt.Sprintf("\"%s\",", fid.(string))
-						i++
-						if i > 23 {
-							errs = errors.New("number of fdcId's should not exceed 24")
-							break
-						}
-					}
-					fIDs = strings.Trim(fIDs, ",")
+					fIDs, _ = fdcids(p.Args["fdcids"].([]interface{}))
+
 					// build an int array of nutrient numbers
 					for _, gnid := range p.Args["nutids"].([]interface{}) {
 						nIDs = append(nIDs, gnid.(int))
@@ -394,6 +473,79 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 						err = errs
 					}
 					return nutdata, err
+				},
+			},
+			"foodsSearch": &graphql.Field{
+				Type: graphql.NewList(foodSearchType),
+				Args: graphql.FieldConfigArgument{
+					"search": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(searchRequestType),
+					},
+				},
+				Description: "Returns a list of foods.  Parameters sent in the browse input object.",
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					var (
+						sr        fdc.SearchRequest
+						max, page int
+						err, errs error
+						r         []interface{}
+					)
+					b := p.Args["search"].(map[string]interface{})
+					if b["max"] == nil {
+						max = 50
+					} else {
+						max = b["max"].(int)
+					}
+					if max > 150 {
+						errs = setError(&errs, "cannot return more than 150 items")
+					}
+					if b["page"] == nil {
+						page = 0
+					} else {
+						page = b["page"].(int)
+					}
+
+					if max <= 0 {
+						max = 50
+					}
+					if max > MAXPAGE {
+						errs = setError(&errs, fmt.Sprintf("max parameter cannot exceed %d", MAXPAGE))
+						max = MAXPAGE
+					}
+					if page < 0 {
+						page = 0
+					}
+
+					sr.Max = max
+
+					if b["type"] != nil {
+						t := b["type"].(string)
+						if t != fdc.PHRASE && t != fdc.WILDCARD && t != fdc.REGEX {
+							errs = setError(&errs, fmt.Sprintf("Search type must be %s, %s, or %s ", fdc.PHRASE, fdc.WILDCARD, fdc.REGEX))
+							sr.SearchType = ""
+						} else {
+							sr.SearchType = t
+						}
+					}
+					if b["field"] != nil {
+						sr.SearchField = b["field"].(string)
+						if strings.ToLower(sr.SearchField) == "category" {
+							sr.SearchField = "foodGroup.description"
+						}
+					}
+					if b["terms"] != nil {
+						sr.Query = b["terms"].(string)
+					}
+					if sr.SearchType == fdc.REGEX {
+						sr.SearchField += "_kw"
+					}
+					sr.Page = page * max
+					sr.IndexName = cs.CouchDb.Fts
+					if _, err = ds.Search(sr, &r); err != nil {
+						return nil, err
+					}
+
+					return r, errs
 				},
 			},
 		},

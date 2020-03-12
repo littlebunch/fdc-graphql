@@ -61,7 +61,7 @@ func main() {
 	dc = &cb
 	err = dc.ConnectDs(cs)
 	if err != nil {
-		log.Fatal("Cannot get datastore connection %v.", err)
+		log.Fatalf("Cannot get datastore connection %v.", err)
 	}
 	defer dc.CloseDs()
 	// initialize our jwt authentication
@@ -72,8 +72,9 @@ func main() {
 	//authMiddleware := u.AuthMiddleware(session, cs.MongoDb.Collection)
 	//router := gin.Default()
 	schema, err := schema.InitSchema(cb, cs)
+
 	if err != nil {
-		log.Fatal("Cannot create the schema %v\n", err)
+		log.Fatalf("Cannot create the schema %v\n", err)
 	}
 	router := gin.New()
 	router.Use(gin.Logger())
