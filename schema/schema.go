@@ -475,6 +475,30 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 					return nutdata, err
 				},
 			},
+			"foodsSearchCount": &graphql.Field{
+				Type: graphql.Int,
+				Args: graphql.FieldConfigArgument{
+					"search": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(searchRequestType),
+					},
+				},
+				Description: "Returns a count of items returned by a search",
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					var (
+						sr        fdc.SearchRequest
+						err, errs error
+						c         int
+						r         []interface{}
+					)
+					sr, errs = searchquery(p)
+					sr.IndexName = cs.CouchDb.Fts
+					sr.Max = 1
+					if c, err = ds.Search(sr, &r); err != nil {
+						return nil, err
+					}
+					return c, errs
+				},
+			},
 			"foodsSearch": &graphql.Field{
 				Type: graphql.NewList(foodSearchType),
 				Args: graphql.FieldConfigArgument{
@@ -486,65 +510,15 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					var (
 						sr        fdc.SearchRequest
-						max, page int
 						err, errs error
 						r         []interface{}
 					)
-					b := p.Args["search"].(map[string]interface{})
-					if b["max"] == nil {
-						max = 50
-					} else {
-						max = b["max"].(int)
-					}
-					if max > 150 {
-						errs = setError(&errs, "cannot return more than 150 items")
-					}
-					if b["page"] == nil {
-						page = 0
-					} else {
-						page = b["page"].(int)
-					}
+					sr, errs = searchquery(p)
 
-					if max <= 0 {
-						max = 50
-					}
-					if max > MAXPAGE {
-						errs = setError(&errs, fmt.Sprintf("max parameter cannot exceed %d", MAXPAGE))
-						max = MAXPAGE
-					}
-					if page < 0 {
-						page = 0
-					}
-
-					sr.Max = max
-
-					if b["type"] != nil {
-						t := b["type"].(string)
-						if t != fdc.PHRASE && t != fdc.WILDCARD && t != fdc.REGEX {
-							errs = setError(&errs, fmt.Sprintf("Search type must be %s, %s, or %s ", fdc.PHRASE, fdc.WILDCARD, fdc.REGEX))
-							sr.SearchType = ""
-						} else {
-							sr.SearchType = t
-						}
-					}
-					if b["field"] != nil {
-						sr.SearchField = b["field"].(string)
-						if strings.ToLower(sr.SearchField) == "category" {
-							sr.SearchField = "foodGroup.description"
-						}
-					}
-					if b["terms"] != nil {
-						sr.Query = b["terms"].(string)
-					}
-					if sr.SearchType == fdc.REGEX {
-						sr.SearchField += "_kw"
-					}
-					sr.Page = page * max
 					sr.IndexName = cs.CouchDb.Fts
 					if _, err = ds.Search(sr, &r); err != nil {
 						return nil, err
 					}
-
 					return r, errs
 				},
 			},
