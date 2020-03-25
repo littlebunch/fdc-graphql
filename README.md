@@ -110,8 +110,9 @@ Search for foods:
 }
 ```
 ```
-curl -g 'https://go.littlebunch.com/graphql?query={foodsSearch(search:{terms:"broccoli rabe",type:"PHRASE",field:"ingredients"}){fdcId,foodDescription,company,ingredients}}'
-Nutrient data for a food:
+curl -g 'https://go.littlebunch.com/graphql?query={foodsSearch(search:{terms:"broccoli rabe",type:"PHRASE",field:"ingredients"}){fdcId,foodDescription,company,ingredients}}'    
+```      
+Nutrient data for a food:    
 ```
 {
    food(id:"356425"){
@@ -133,9 +134,6 @@ Nutrient data for a food:
 ```
 ```
 curl -g 'https://go.littlebunch.com/graphql?query={food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcids:["356425"],nutids:[]){nutrient,nutrientno,value}}'
-```
-```
-curl -XPOST -H "Content-type:application/json" https://go.littlebunch.com/graphql -d '{"query":"{food(id:"356425"){fdcId,foodDescription,dataSource,servingSizes{nutrientBasis,servingUnit,value}}nutrientdata(fdcids:["356425"],nutids:[]){nutrient,nutrientno,value}}"}'
 ```
 Nutrient data for an individual nutrient in a food:
 ```
