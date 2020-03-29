@@ -6,36 +6,34 @@ import (
 	"strings"
 
 	"github.com/graphql-go/graphql"
-	"github.com/littlebunch/fdc-api/ds/cb"
 	fdc "github.com/littlebunch/fdc-api/model"
-	"github.com/littlebunch/fdc-graphql/schema"
 )
 
-func foodResolver(p graphql.ResolveParams, ds *cb.Cb) (interface{}, error) {
-	var food fdc.Food
-	food.FdcID = p.Args["id"].(string)
-	err := ds.Get(food.FdcID, &food)
-	if err != nil {
-		return nil, err
-	}
-	return food, nil
-}
-func fdcids(fids []interface{}) (string, string) {
+// Maximum number of FDC Id's that may be requested per query
+const (
+	MAXIDS  = 100
+	MAXPAGE = 150
+)
+
+//Fdcids creates a csv string representation of an array of fdcids for use in a query
+func Fdcids(fids []interface{}) (string, string) {
 	i := 0
 	fIDs := ""
 	var err string
 	for _, fid := range fids {
 		fIDs += fmt.Sprintf("\"%s\",", fid.(string))
 		i++
-		if i > schema.MAXIDS {
-			err = fmt.Sprintf("number of fdcId's should not exceed %d", schema.MAXIDS)
+		if i > MAXIDS {
+			err = fmt.Sprintf("number of fdcId's should not exceed %d", MAXIDS)
 			break
 		}
 	}
 	fIDs = strings.Trim(fIDs, ",")
 	return fIDs, err
 }
-func setError(err *error, msg string) error {
+
+//Seterror adds an error to an error array
+func Seterror(err *error, msg string) error {
 
 	if *err == nil {
 		*err = errors.New(msg)
@@ -45,7 +43,9 @@ func setError(err *error, msg string) error {
 	return *err
 
 }
-func searchquery(p graphql.ResolveParams) (fdc.SearchRequest, error) {
+
+//Searchquery builds a SearchRequest from query parameters
+func Searchquery(p graphql.ResolveParams) (fdc.SearchRequest, error) {
 	var (
 		sr        fdc.SearchRequest
 		max, page int
@@ -58,7 +58,7 @@ func searchquery(p graphql.ResolveParams) (fdc.SearchRequest, error) {
 		max = b["max"].(int)
 	}
 	if max > 150 {
-		errs = setError(&errs, "cannot return more than 150 items")
+		errs = Seterror(&errs, "cannot return more than 150 items")
 	}
 	if b["page"] == nil {
 		page = 0
@@ -69,9 +69,9 @@ func searchquery(p graphql.ResolveParams) (fdc.SearchRequest, error) {
 	if max <= 0 {
 		max = 50
 	}
-	if max > schema.MAXPAGE {
-		errs = setError(&errs, fmt.Sprintf("max parameter cannot exceed %d", schema.MAXPAGE))
-		max = schema.MAXPAGE
+	if max > MAXPAGE {
+		errs = Seterror(&errs, fmt.Sprintf("max parameter cannot exceed %d", MAXPAGE))
+		max = MAXPAGE
 	}
 	if page < 0 {
 		page = 0
@@ -82,7 +82,7 @@ func searchquery(p graphql.ResolveParams) (fdc.SearchRequest, error) {
 	if b["type"] != nil {
 		t := b["type"].(string)
 		if t != fdc.PHRASE && t != fdc.WILDCARD && t != fdc.REGEX {
-			errs = setError(&errs, fmt.Sprintf("Search type must be %s, %s, or %s ", fdc.PHRASE, fdc.WILDCARD, fdc.REGEX))
+			errs = Seterror(&errs, fmt.Sprintf("Search type must be %s, %s, or %s ", fdc.PHRASE, fdc.WILDCARD, fdc.REGEX))
 			sr.SearchType = ""
 		} else {
 			sr.SearchType = t

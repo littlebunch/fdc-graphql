@@ -1,24 +1,15 @@
 package schema
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/graphql-go/graphql"
 	"github.com/littlebunch/fdc-api/ds/cb"
 	fdc "github.com/littlebunch/fdc-api/model"
-	"gopkg.in/couchbase/gocb.v1"
-)
-
-// Maximum number of FDC Id's that may be requested per query
-const (
-	MAXIDS  = 100
-	MAXPAGE = 150
+	"github.com/littlebunch/fdc-graphql/resolvers"
 )
 
 // InitSchema -- Create and return the FDC schema which is based on the fdc.Foods package
 func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
-	ds := &cb
+	r := resolvers.Resolver{Ds: &cb, Cs: cs}
 	// food servings
 	servingType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Serving",
@@ -63,16 +54,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 			},
 		},
 	})
-	type FoodMeta struct {
-		FdcID        string `json:"fdcId" binding:"required"`
-		Upc          string `json:"upc"`
-		Description  string `json:"foodDescription" binding:"required"`
-		Ingredients  string `json:"ingredients,omitempty"`
-		Source       string `json:"dataSource"`
-		Manufacturer string `json:"company,omitempty"`
-		Type         string `json:"type"`
-		Category     string `json:"foodgroup.description,omitempty"`
-	}
+
 	foodSearchType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "FoodSearch",
 		Fields: graphql.Fields{
@@ -301,26 +283,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				},
 				Description: "Returns a list of foods.  Parameters sent in the browse input object.",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					var (
-						dt   *fdc.DocType
-						s    string
-						errs error
-						r    interface{}
-						fIDs string
-					)
-					where := fmt.Sprintf("type=\"%s\" ", dt.ToString(fdc.FOOD))
-					if p.Args["fdcids"] != nil {
-						fIDs, s = fdcids(p.Args["fdcids"].([]interface{}))
-						if s != "" {
-							errs = setError(&errs, s)
-						}
-						if fIDs != "" {
-							where += fmt.Sprintf("AND fdcId in [%s]", fIDs)
-						}
-					}
-
-					r, _ = ds.Browse(cs.CouchDb.Bucket, where, int64(0), int64(2), "fdcId", "desc")
-					return r, errs
+					return r.Foods(p)
 				},
 			},
 			"foodsBrowse": &graphql.Field{
@@ -332,68 +295,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				},
 				Description: "Returns a list of foods.  Parameters sent in the browse input object.",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					var (
-						dt                  *fdc.DocType
-						max, page           int
-						sort, order, source string
-						errs                error
-						r                   interface{}
-					)
-					b := p.Args["browse"].(map[string]interface{})
-					if b["max"] == nil {
-						max = 50
-					} else {
-						max = b["max"].(int)
-					}
-					if max > 150 {
-						errs = setError(&errs, "cannot return more than 150 items")
-					}
-					if b["page"] == nil {
-						page = 0
-					} else {
-						page = b["page"].(int)
-					}
-					if b["sort"] == nil {
-						sort = "fdcId"
-					} else {
-						sort = b["sort"].(string)
-					}
-					if b["order"] == nil {
-						order = "ASC"
-					} else {
-						order = b["order"].(string)
-					}
-					if b["source"] != nil {
-						source = b["source"].(string)
-					}
-					if max == 0 {
-						max = 50
-					}
-					if max > MAXPAGE {
-						errs = setError(&errs, fmt.Sprintf("max parameter cannot exceed %d", MAXPAGE))
-						max = MAXPAGE
-					}
-					if page < 0 {
-						page = 0
-					}
-					if sort == "" {
-						sort = "fdcId"
-					}
-					if order == "" {
-						order = "ASC"
-					}
-					if sort != "foodDescription" && sort != "company" && sort != "fdcId" {
-						errs = setError(&errs, "unrecognized sort parameter.  Must be 'company', 'foodDescription' or 'fdcId'")
-						sort = "fdcId"
-					}
-					offset := page * max
-					where := fmt.Sprintf("type=\"%s\" ", dt.ToString(fdc.FOOD))
-
-					if source != "" {
-						where = where + fmt.Sprintf(" AND dataSource = '%s'", source)
-					}
-					r, _ = ds.Browse(cs.CouchDb.Bucket, where, int64(offset), int64(max), sort, order)
-					return r, errs
+					return r.FoodsBrowse(p)
 				},
 			},
 			"food": &graphql.Field{
@@ -405,21 +307,15 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				},
 				Description: "Returns a food for a given fdcId.",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					var food fdc.Food
-					food.FdcID = p.Args["id"].(string)
-					err := ds.Get(food.FdcID, &food)
-					if err != nil {
-						return nil, err
-					}
-					return food, nil
+					return r.Food(p)
 				},
 			},
+
 			"nutrients": &graphql.Field{
 				Type:        graphql.NewList(nutrientType),
 				Description: "Returns a list of nutrients used in the database",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					var dt *fdc.DocType
-					return ds.GetDictionary(cs.CouchDb.Bucket, dt.ToString(fdc.NUT), 0, 300)
+					return r.Nutrients(p)
 				},
 			},
 			"nutrientdata": &graphql.Field{
@@ -435,44 +331,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				},
 				Description: "Returns one or more nutrient values for a food.",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-
-					var (
-						nut       fdc.NutrientData
-						nutdata   []fdc.NutrientData
-						rows      gocb.QueryResults
-						nIDs      []int
-						fIDs      string
-						q         string
-						err, errs error
-					)
-
-					// build a string array of FDC id's
-					fIDs, _ = fdcids(p.Args["fdcids"].([]interface{}))
-
-					// build an int array of nutrient numbers
-					for _, gnid := range p.Args["nutids"].([]interface{}) {
-						nIDs = append(nIDs, gnid.(int))
-					}
-					// put the nutrientno array into a string for the query
-					nstr := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(nIDs)), ","), "[]")
-
-					if nstr != "" {
-						q = fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId in [%s] and nutrientNumber in [%s] order by fdcId,nutrientNumber", cs.CouchDb.Bucket, fIDs, nstr)
-					} else {
-						q = fmt.Sprintf("select nutrientdata.* from %s as nutrientdata where type=\"NUTDATA\" and fdcId in [%s] order by fdcId,nutrientNumber", cs.CouchDb.Bucket, fIDs)
-					}
-					rows, err = cb.Conn.ExecuteN1qlQuery(gocb.NewN1qlQuery(q), nil)
-					if err != nil {
-						return nil, err
-					}
-					// put the query results into the nutrientdata array
-					for rows.Next(&nut) {
-						nutdata = append(nutdata, nut)
-					}
-					if err == nil {
-						err = errs
-					}
-					return nutdata, err
+					return r.Nutrientdata(p)
 				},
 			},
 			"foodsSearchCount": &graphql.Field{
@@ -484,19 +343,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				},
 				Description: "Returns a count of items returned by a search",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					var (
-						sr        fdc.SearchRequest
-						err, errs error
-						c         int
-						r         []interface{}
-					)
-					sr, errs = searchquery(p)
-					sr.IndexName = cs.CouchDb.Fts
-					sr.Max = 1
-					if c, err = ds.Search(sr, &r); err != nil {
-						return nil, err
-					}
-					return c, errs
+					return r.FoodSearchCount(p)
 				},
 			},
 			"foodsSearch": &graphql.Field{
@@ -508,18 +355,7 @@ func InitSchema(cb cb.Cb, cs fdc.Config) (graphql.Schema, error) {
 				},
 				Description: "Returns a list of foods.  Parameters sent in the browse input object.",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					var (
-						sr        fdc.SearchRequest
-						err, errs error
-						r         []interface{}
-					)
-					sr, errs = searchquery(p)
-
-					sr.IndexName = cs.CouchDb.Fts
-					if _, err = ds.Search(sr, &r); err != nil {
-						return nil, err
-					}
-					return r, errs
+					return r.FoodSearch(p)
 				},
 			},
 		},
